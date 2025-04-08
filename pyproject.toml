@@ -1,0 +1,73 @@
+# Metadata
+[project]
+name = "masters_project"
+version = "0.0.1"
+authors = [
+    {name = "Danilo Calhes", email = "dancps96@gmail.com"},
+]
+description = ""
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.8",
+]
+dependencies = [
+    "termcolor",
+    "tqdm",
+    "numpy",
+    "pandas", 
+    "matplotlib",
+    "pydantic",
+    "tabulate"
+]
+[project.urls]
+"Homepage" = "https://github.com/dancps/masters_project"
+
+[project.optional-dependencies]
+dev = [
+    "pylint",
+    "pytest",
+    "pytest-cov",
+    "isort",
+    "mypy",
+    "flake8",
+    "black"
+]
+
+test = [
+    "pytest",
+    "pytest-cov"
+] 
+
+build = [
+    "setuptools",
+    "wheel", 
+    "twine", 
+    "build" 
+]
+
+[tool.setuptools.package-dir]
+masters = "./"
+
+# [project.scripts]
+# finance = "masters_project.main:main"
+# cccheck = "masters_project.cccheck.main:main"
+
+[tool.pytest.ini_options]
+addopts = "--cov=masters_project --cov-report xml --cov-report term-missing"# --cov-fail-under 95"
+
+[tool.coverage.run]
+source = ["models"]
+
+[tool.isort]
+profile = "black"
+
+[tool.black]
+line-length = 100
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
