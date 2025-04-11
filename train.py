@@ -1,6 +1,7 @@
 import os
 import argparse
 import tensorflow as tf
+from tensorflow.keras.metrics import F1Score
 
 
 from masters.models.armnet import RMFNet
@@ -71,7 +72,7 @@ def main():
   model.compile(
     optimizer='adam',
     loss=tf.losses.SparseCategoricalCrossentropy(from_logits=False), #'categorical_crossentropy', #
-    metrics=['accuracy'])
+    metrics=['accuracy'])# F1Score()
   
   history = model.fit(
     train_ds,
@@ -80,6 +81,10 @@ def main():
   )
 
   print(history)
+  print("Evaluate")
+  result = model.evaluate(val_ds)
+  dict(zip(model.metrics_names, result))
+
   # @tf.function
   # def train_step(images, labels):
   #   with tf.GradientTape() as tape:

@@ -45,13 +45,18 @@ docker run -it -v $(pwd):/home/app -w /home/app masters_project:latest python tr
 ```
 
 
+Install nvidia-container-toolkit, to be able to use GPU in docker:
 ```
 curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg \
 && curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | \                   sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \            sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
 
 
 sudo apt-get install -y nvidia-container-toolkit
+```
 
+
+In WSL you can also install cuda
+```
 wget https://developer.download.nvidia.com/compute/cuda/repos/wsl-ubuntu/x86_64/cuda-wsl-ubuntu.pin
 sudo mv cuda-wsl-ubuntu.pin /etc/apt/preferences.d/cuda-repository-pin-600
 wget https://developer.download.nvidia.com/compute/cuda/12.8.1/local_installers/cuda-repo-wsl-ubuntu-12-8-local_12.8.1-1_amd64.deb
