@@ -39,6 +39,11 @@ docker build -t masters_project:latest -f Dockerfile .
 docker run -it --gpus all -v $(pwd):/home/app -w /home/app masters_project:latest python train.py data/mbtd/raw/Training
 ``` 
 
+Or in a CPU only computer:
+```
+docker run -it -v $(pwd):/home/app -w /home/app masters_project:latest python train.py data/mbtd/raw/Training
+```
+
 
 ```
 curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg \
