@@ -1,4 +1,5 @@
-FROM tensorflow/tensorflow:latest-gpu
+# FROM tensorflow/tensorflow:latest-gpu
+FROM nvcr.io/nvidia/tensorflow:25.02-tf2-py3
 
 WORKDIR /home/app
 
@@ -14,10 +15,11 @@ COPY . .
 # Install the package in editable mode
 RUN pip install -e .
 
-RUN pip install tensorflow[and-cuda]
+RUN pip install --upgrade tensorflow
 
-ENV XLA_PYTHON_CLIENT_PREALLOCATE=false
-ENV XLA_FLAGS="--xla_gpu_strict_conv_algorithm_picker=false --xla_gpu_force_compilation_parallelism=1"
+# ENV XLA_PYTHON_CLIENT_PREALLOCATE=false
+# ENV XLA_FLAGS="--xla_gpu_strict_conv_algorithm_picker=false --xla_gpu_force_compilation_parallelism=1"
 
 # # Set the default command
 # CMD ["python", "-c", "import masters_project; print('Package installed successfully!')"]
+
