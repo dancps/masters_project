@@ -30,37 +30,44 @@ def main():
   parser.add_argument('--multichoice', choices=['a', 'b', 'c'], nargs='+', type=str, help='multiple types of arguments. May be called all at the same time.')
   args = parser.parse_args()
 
-
-  # Parameters
-  img_height, img_width = 224, 224
+  # Method parameters
+  input_shape = (224, 224)
   batch_size = 64
-
   train_folder = os.path.join(args.input, "raw/Training")
   test_folder  = os.path.join(args.input, "raw/Testing")
   epochs = args.epochs
+  validation_split_size = 0.2
+  seed = args.seed
+
+  # Load model
+  model = RMFNet()
+  # model.save would save the model with weights
+
+  # Parameters
+  img_height, img_width = input_shape
 
   # Load data
   train_ds = tf.keras.utils.image_dataset_from_directory(
     train_folder,
-    validation_split=0.2,
+    validation_split=validation_split_size,
     subset="training",
-    seed=args.seed,
+    seed=seed,
     label_mode='categorical',
     image_size=(img_height, img_width),
     batch_size=batch_size)#.take(10)
   
   val_ds = tf.keras.utils.image_dataset_from_directory(
     train_folder,
-    validation_split=0.2,
+    validation_split=validation_split_size,
     subset="validation",
-    seed=args.seed,
+    seed=seed,
     image_size=(img_height, img_width),
     label_mode='categorical',
     batch_size=batch_size)#.take(10)
 
   test_ds = tf.keras.utils.image_dataset_from_directory(
     test_folder,
-    seed=args.seed,
+    seed=seed,
     image_size=(img_height, img_width),
     label_mode='categorical',
     batch_size=batch_size)#.take(10)
@@ -82,13 +89,10 @@ def main():
   # print(train_ds)
   # print(val_ds)
 
-  # Load model
-  model = RMFNet()
-  # model.save would save the model with weights
 
   # Defines the checkpoints
   #   If not exists, creates the directory
-  checkpoint_path = f"experiments/model_checkpoints/armnet/{stage}/"+"armnet-{epoch:04d}.ckpt"
+  checkpoint_path = f"experiments/model_checkpoints/armnet/{stage}/"+"armnet-{epoch:04d}.weights.h5"
   # checkpoint_dir = os.path.dirname(checkpoint_path)
 
   # Create a callback that saves the model's weights
