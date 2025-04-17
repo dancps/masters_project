@@ -1,10 +1,10 @@
-import os
 import argparse
+import os
+from datetime import datetime as dt
+
 import tensorflow as tf
-from tensorflow.keras.metrics import F1Score
-
-
 from masters.models.armnet import RMFNet
+from tensorflow.keras.metrics import F1Score
 # from masters.models.armnet import ARMNet, RNe, MyModel, RMFNet
 
 
@@ -17,14 +17,16 @@ def preprocess_image(image, label):
 
 
 def main():
-      #Very  useful: https://www.tensorflow.org/tutorials/load_data/images?hl=pt-br
-      # Can apply custom logic to resize: https://www.tensorflow.org/api_docs/python/tf/keras/layers/Resizing
-      #   Sticking to default for simplicity
+  #Very  useful: https://www.tensorflow.org/tutorials/load_data/images?hl=pt-br
+  # Can apply custom logic to resize: https://www.tensorflow.org/api_docs/python/tf/keras/layers/Resizing
+  #   Sticking to default for simplicity
   parser = argparse.ArgumentParser()
-  parser.add_argument('input',  type=str, help='input')
+  parser.add_argument('-i', '--input',  type=str, default='data/mbtd/', help='input')
   parser.add_argument('-o', '--output', default='.', type=str, help='output')
   parser.add_argument('-s', '--seed', default=123, type=int, help='output')
+  parser.add_argument('-e', '--epochs', default=50, type=int, help='output')
   parser.add_argument('-v', '--verbose', help='increase output verbosity', action='store_true')
+  parser.add_argument('-d', '--development', help='changes to dev experience', action='store_true')
   parser.add_argument('--multichoice', choices=['a', 'b', 'c'], nargs='+', type=str, help='multiple types of arguments. May be called all at the same time.')
   args = parser.parse_args()
 
@@ -33,111 +35,98 @@ def main():
   img_height, img_width = 224, 224
   batch_size = 64
 
+  train_folder = os.path.join(args.input, "raw/Training")
+  test_folder  = os.path.join(args.input, "raw/Testing")
+  epochs = args.epochs
+
   # Load data
   train_ds = tf.keras.utils.image_dataset_from_directory(
-    args.input,
+    train_folder,
     validation_split=0.2,
     subset="training",
     seed=args.seed,
+    label_mode='categorical',
     image_size=(img_height, img_width),
-    batch_size=batch_size).take(10)
+    batch_size=batch_size)#.take(10)
   
   val_ds = tf.keras.utils.image_dataset_from_directory(
-    args.input,
+    train_folder,
     validation_split=0.2,
     subset="validation",
     seed=args.seed,
     image_size=(img_height, img_width),
-    batch_size=batch_size).take(10)
+    label_mode='categorical',
+    batch_size=batch_size)#.take(10)
+
+  test_ds = tf.keras.utils.image_dataset_from_directory(
+    test_folder,
+    seed=args.seed,
+    image_size=(img_height, img_width),
+    label_mode='categorical',
+    batch_size=batch_size)#.take(10)
+  
+  # Reduces input size when in development mode
+  if args.development:
+    train_ds = train_ds.take(10)
+    val_ds = val_ds.take(10)
+    test_ds = test_ds.take(10)
+    epochs = 1
+    stage = "dev"
+  else: 
+    stage = "prod"
 
   # Apply preprocessing to standardize images
   # train_ds = train_ds.map(preprocess_image)
   # val_ds = val_ds.map(preprocess_image)
-  
-  print(train_ds)
-  print(val_ds)
+
+  # print(train_ds)
+  # print(val_ds)
 
   # Load model
-  model = RMFNet() #RNe()
-  loss_object = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+  model = RMFNet()
+  # model.save would save the model with weights
 
-  optimizer = tf.keras.optimizers.Adam()
+  # Defines the checkpoints
+  #   If not exists, creates the directory
+  checkpoint_path = f"experiments/model_checkpoints/armnet/{stage}/"+"armnet-{epoch:04d}.ckpt"
+  # checkpoint_dir = os.path.dirname(checkpoint_path)
 
-  ###
-  train_loss = tf.keras.metrics.Mean(name='train_loss')
-  train_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='train_accuracy')
+  # Create a callback that saves the model's weights
+  cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=checkpoint_path,
+                                                  save_weights_only=True,
+                                                  verbose=1)
+  # Save the last one and the best one
+  
+  f1 = F1Score(average='macro', threshold=0.5)
+  precision_metric = tf.keras.metrics.Precision(name = 'precision')#, class_id = 4)
 
-  test_loss = tf.keras.metrics.Mean(name='test_loss')
-  test_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='test_accuracy')
   model.compile(
     optimizer='adam',
-    loss=tf.losses.SparseCategoricalCrossentropy(from_logits=False), #'categorical_crossentropy', #
-    metrics=['accuracy'])# F1Score()
+    # loss='categorical',
+    loss='categorical_crossentropy',
+    # loss=tf.losses.SparseCategoricalCrossentropy(from_logits=False), #'categorical_crossentropy', #
+    metrics=['accuracy', precision_metric, f1])# F1Score()
   
   history = model.fit(
     train_ds,
     validation_data=val_ds,
-    epochs=3
+    epochs=epochs, 
+    callbacks=[cp_callback]
   )
 
   print(history)
   print("Evaluate")
-  result = model.evaluate(val_ds)
-  dict(zip(model.metrics_names, result))
-
-  # @tf.function
-  # def train_step(images, labels):
-  #   with tf.GradientTape() as tape:
-  #     # training=True is only needed if there are layers with different
-  #     # behavior during training versus inference (e.g. Dropout).
-  #     predictions = model(images, training=True)
-  #     loss = loss_object(labels, predictions)
-  #   gradients = tape.gradient(loss, model.trainable_variables)
-  #   optimizer.apply_gradients(zip(gradients, model.trainable_variables))
-
-  #   train_loss(loss)
-  #   train_accuracy(labels, predictions)
-
-
-  # ###
-  # @tf.function
-  # def test_step(images, labels):
-  #   # training=False is only needed if there are layers with different
-  #   # behavior during training versus inference (e.g. Dropout).
-  #   predictions = model(images, training=False)
-  #   t_loss = loss_object(labels, predictions)
-
-  #   test_loss(t_loss)
-  #   test_accuracy(labels, predictions)
-
-
-  # ###
-  # EPOCHS = 5
-
-  # for epoch in range(EPOCHS):
-  #   # Reset the metrics at the start of the next epoch
-  #   train_loss.reset_state()
-  #   train_accuracy.reset_state()
-  #   test_loss.reset_state()
-  #   test_accuracy.reset_state()
-
-  #   for images, labels in train_ds:
-  #     train_step(images, labels)
-
-  #   for test_images, test_labels in test_ds:
-  #     test_step(test_images, test_labels)
-
-  #   print(
-  #     f'Epoch {epoch + 1}, '
-  #     f'Loss: {train_loss.result()}, '
-  #     f'Accuracy: {train_accuracy.result() * 100}, '
-  #     f'Test Loss: {test_loss.result()}, '
-  #     f'Test Accuracy: {test_accuracy.result() * 100}'
-  #   )
-
-
-  
-
+  result = model.evaluate(test_ds)
+  print(dict(zip(model.metrics_names, result)))
 
 if __name__ == "__main__":
-  main()
+
+  init=dt.now()
+  try:
+    main()
+    end=dt.now()
+  except Exception as e:
+    print("Error in main:\n",e)
+    end = dt.now()
+  print('Elapsed time: {}'.format(end-init))
+
