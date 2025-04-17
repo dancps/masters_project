@@ -1,3 +1,9 @@
+from masters.op.dataset import Dataset
+import tensorflow as tf
+
+from tensorflow.keras.metrics import F1Score
+from tensorflow.keras import Model
+
 class Experiment:
     """
         A experiment should recieve everything which is important to a run.
@@ -11,26 +17,75 @@ class Experiment:
             - be able to run the steps of the experiment.
             - be able to save the results of the experiment.
     """
-    def __init__(self, epochs: int = None, dataset: str = None):
+    def __init__(self, experiment_name: str, model: Model, epochs: int = None, dataset: Dataset = None):
+        self.experiment_name = experiment_name
         self.epochs = epochs
         self.dataset = dataset
-        pass
+        self.model = model
+        # self.metrics = metrics
 
-    def __validate_instantiated(self):
-        attributes = [
-            'epochs', 
-            'dataset', 
-            'preprocessors'
-        ]
-        for attr in attributes:
-            if getattr(self, attr, None) is None:
-                raise ValueError(f"The attribute '{attr}' must be initialized and cannot be None.")
+    # def train(self):
+    #     raise NotImplementedError("Train method are not implemented yet.")
     
-    def train(self):
-        # To be defined
-        pass
+    # def test(self):
+    #     raise NotImplementedError("Evaluate method are not implemented yet.")
 
-    def run(self):
+    def train(self, is_development = False):
+
+        # Load data
+        train_ds = self.dataset.get_train_dataset(is_development)
+        val_ds = self.dataset.get_validation_dataset(is_development)
+
+
+        # Reduces input size when in development mode
+        if is_development:
+            epochs = 1
+            stage = "dev"
+        else: 
+            epochs = self.epochs
+            stage = "prod"
+
+        # Defines the checkpoints
+        #   If not exists, creates the directory
+        checkpoint_path = f"data/experiments/{self.experiment_name}/model_checkpoints/armnet/{stage}/"+"armnet-{epoch:04d}.weights.h5"
+        # checkpoint_dir = os.path.dirname(checkpoint_path)
+
+        # Create a callback that saves the model's weights
+        cp_callback = tf.keras.callbacks.ModelCheckpoint(
+            filepath=checkpoint_path,
+            save_weights_only=True,
+            verbose=1)
+        # Save the last one and the best one
+        
+        f1 = F1Score(average='macro', threshold=0.5)
+        precision_metric = tf.keras.metrics.Precision(name = 'precision')#, class_id = 4)
+
+        self.model.compile(
+            optimizer='adam',
+            # loss='categorical',
+            loss='categorical_crossentropy',
+            # loss=tf.losses.SparseCategoricalCrossentropy(from_logits=False), #'categorical_crossentropy', #
+            metrics=['accuracy', precision_metric, f1]
+        )# F1Score()
+        
+        history = self.model.fit(
+            train_ds,
+            validation_data=val_ds,
+            epochs=epochs, 
+            callbacks=[cp_callback]
+        )
+
+        print(history)
+
+    def evaluate(self, is_development = False):
+
+        test_ds = self.dataset.get_test_dataset(is_development)
+
+        print("Evaluate")
+        result = self.model.evaluate(test_ds)
+        print(dict(zip(self.model.metrics_names, result)))
+        
+    def run(self, is_development = False):
         # Run the steps of the experiment
         #     What composes?
 
@@ -42,7 +97,8 @@ class Experiment:
         # - Train
         # - Test
         # - Results
-        pass
+        self.train(is_development)
+        self.evaluate(is_development)
 
     def run_development(self):
         # Parameters
