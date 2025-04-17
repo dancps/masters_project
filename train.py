@@ -43,85 +43,86 @@ def main():
   model = RMFNet()
   # model.save would save the model with weights
 
-  # Parameters
-  img_height, img_width = input_shape
+  def train(model, input_shape, batch_size, train_folder, test_folder, epochs, validation_split_size, seed):
+    # Parameters
+    img_height, img_width = input_shape
 
-  # Load data
-  train_ds = tf.keras.utils.image_dataset_from_directory(
-    train_folder,
-    validation_split=validation_split_size,
-    subset="training",
-    seed=seed,
-    label_mode='categorical',
-    image_size=(img_height, img_width),
-    batch_size=batch_size)#.take(10)
-  
-  val_ds = tf.keras.utils.image_dataset_from_directory(
-    train_folder,
-    validation_split=validation_split_size,
-    subset="validation",
-    seed=seed,
-    image_size=(img_height, img_width),
-    label_mode='categorical',
-    batch_size=batch_size)#.take(10)
+    # Load data
+    train_ds = tf.keras.utils.image_dataset_from_directory(
+      train_folder,
+      validation_split=validation_split_size,
+      subset="training",
+      seed=seed,
+      label_mode='categorical',
+      image_size=(img_height, img_width),
+      batch_size=batch_size)#.take(10)
+    
+    val_ds = tf.keras.utils.image_dataset_from_directory(
+      train_folder,
+      validation_split=validation_split_size,
+      subset="validation",
+      seed=seed,
+      image_size=(img_height, img_width),
+      label_mode='categorical',
+      batch_size=batch_size)#.take(10)
 
-  test_ds = tf.keras.utils.image_dataset_from_directory(
-    test_folder,
-    seed=seed,
-    image_size=(img_height, img_width),
-    label_mode='categorical',
-    batch_size=batch_size)#.take(10)
-  
-  # Reduces input size when in development mode
-  if args.development:
-    train_ds = train_ds.take(10)
-    val_ds = val_ds.take(10)
-    test_ds = test_ds.take(10)
-    epochs = 1
-    stage = "dev"
-  else: 
-    stage = "prod"
+    test_ds = tf.keras.utils.image_dataset_from_directory(
+      test_folder,
+      seed=seed,
+      image_size=(img_height, img_width),
+      label_mode='categorical',
+      batch_size=batch_size)#.take(10)
+    
+    # Reduces input size when in development mode
+    if args.development:
+      train_ds = train_ds.take(10)
+      val_ds = val_ds.take(10)
+      test_ds = test_ds.take(10)
+      epochs = 1
+      stage = "dev"
+    else: 
+      stage = "prod"
 
-  # Apply preprocessing to standardize images
-  # train_ds = train_ds.map(preprocess_image)
-  # val_ds = val_ds.map(preprocess_image)
+    # Apply preprocessing to standardize images
+    # train_ds = train_ds.map(preprocess_image)
+    # val_ds = val_ds.map(preprocess_image)
 
-  # print(train_ds)
-  # print(val_ds)
+    # print(train_ds)
+    # print(val_ds)
 
 
-  # Defines the checkpoints
-  #   If not exists, creates the directory
-  checkpoint_path = f"experiments/model_checkpoints/armnet/{stage}/"+"armnet-{epoch:04d}.weights.h5"
-  # checkpoint_dir = os.path.dirname(checkpoint_path)
+    # Defines the checkpoints
+    #   If not exists, creates the directory
+    checkpoint_path = f"experiments/model_checkpoints/armnet/{stage}/"+"armnet-{epoch:04d}.weights.h5"
+    # checkpoint_dir = os.path.dirname(checkpoint_path)
 
-  # Create a callback that saves the model's weights
-  cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=checkpoint_path,
-                                                  save_weights_only=True,
-                                                  verbose=1)
-  # Save the last one and the best one
-  
-  f1 = F1Score(average='macro', threshold=0.5)
-  precision_metric = tf.keras.metrics.Precision(name = 'precision')#, class_id = 4)
+    # Create a callback that saves the model's weights
+    cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=checkpoint_path,
+                                                    save_weights_only=True,
+                                                    verbose=1)
+    # Save the last one and the best one
+    
+    f1 = F1Score(average='macro', threshold=0.5)
+    precision_metric = tf.keras.metrics.Precision(name = 'precision')#, class_id = 4)
 
-  model.compile(
-    optimizer='adam',
-    # loss='categorical',
-    loss='categorical_crossentropy',
-    # loss=tf.losses.SparseCategoricalCrossentropy(from_logits=False), #'categorical_crossentropy', #
-    metrics=['accuracy', precision_metric, f1])# F1Score()
-  
-  history = model.fit(
-    train_ds,
-    validation_data=val_ds,
-    epochs=epochs, 
-    callbacks=[cp_callback]
-  )
+    model.compile(
+      optimizer='adam',
+      # loss='categorical',
+      loss='categorical_crossentropy',
+      # loss=tf.losses.SparseCategoricalCrossentropy(from_logits=False), #'categorical_crossentropy', #
+      metrics=['accuracy', precision_metric, f1])# F1Score()
+    
+    history = model.fit(
+      train_ds,
+      validation_data=val_ds,
+      epochs=epochs, 
+      callbacks=[cp_callback]
+    )
 
-  print(history)
-  print("Evaluate")
-  result = model.evaluate(test_ds)
-  print(dict(zip(model.metrics_names, result)))
+    print(history)
+    print("Evaluate")
+    result = model.evaluate(test_ds)
+    print(dict(zip(model.metrics_names, result)))
 
 if __name__ == "__main__":
 
