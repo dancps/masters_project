@@ -65,3 +65,8 @@ sudo cp /var/cuda-repo-wsl-ubuntu-12-8-local/cuda-*-keyring.gpg /usr/share/keyri
 sudo apt-get update
 sudo apt-get -y install cuda-toolkit-12-8
 ```
+
+
+# Refs
+- [How to disable tensorflow warnings](https://github.com/tensorflow/tensorflow/issues/54499#issuecomment-1049553976)
+- [How to nvdia toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)

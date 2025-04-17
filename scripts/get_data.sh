@@ -4,6 +4,7 @@ curl -L -o data/datasets/mbtd/raw/brain-tumor-mri-dataset.zip\
 
 
 unzip data/datasets/mbtd/raw/brain-tumor-mri-dataset.zip -d data/datasets/mbtd/raw/
+rm data/datasets/mbtd/raw/brain-tumor-mri-dataset.zip
 
-mv data/datasets/mbtd/raw/Testing data/datasets/mbtd/raw/test
-mv data/datasets/mbtd/raw/Training data/datasets/mbtd/raw/train
+mv data/datasets/mbtd/raw/Testing/ data/datasets/mbtd/raw/test/
+mv data/datasets/mbtd/raw/Training/ data/datasets/mbtd/raw/train/

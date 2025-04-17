@@ -1,8 +1,9 @@
 from masters.op.dataset import Dataset
 import tensorflow as tf
-
+from termcolor import colored
 from tensorflow.keras.metrics import F1Score
 from tensorflow.keras import Model
+import datetime
 
 class Experiment:
     """
@@ -47,15 +48,28 @@ class Experiment:
 
         # Defines the checkpoints
         #   If not exists, creates the directory
-        checkpoint_path = f"data/experiments/{self.experiment_name}/model_checkpoints/armnet/{stage}/"+"armnet-{epoch:04d}.weights.h5"
-        # checkpoint_dir = os.path.dirname(checkpoint_path)
+        checkpoints_path = f"data/experiments/{self.experiment_name}/checkpoints/{stage}"
 
+        model_checkpoint = f"{checkpoints_path}/model/{self.experiment_name}"+"-{epoch:04d}.weights.h5"
         # Create a callback that saves the model's weights
         cp_callback = tf.keras.callbacks.ModelCheckpoint(
-            filepath=checkpoint_path,
+            filepath=model_checkpoint,
             save_weights_only=True,
             verbose=1)
         # Save the last one and the best one
+
+        # For using at tensorboard
+        log_checkpoint = f"{checkpoints_path}/logs/fit/"+datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+        tensorboard_callback = tf.keras.callbacks.TensorBoard(
+            log_dir=log_checkpoint,
+            histogram_freq=1,
+            write_graph=True,
+            write_images=True,
+            write_steps_per_second=False,
+            update_freq='epoch',
+            profile_batch=0,
+            embeddings_freq=0,
+            embeddings_metadata=None)
         
         f1 = F1Score(average='macro', threshold=0.5)
         precision_metric = tf.keras.metrics.Precision(name = 'precision')#, class_id = 4)
@@ -72,7 +86,7 @@ class Experiment:
             train_ds,
             validation_data=val_ds,
             epochs=epochs, 
-            callbacks=[cp_callback]
+            callbacks=[cp_callback, tensorboard_callback]
         )
 
         print(history)
@@ -97,13 +111,10 @@ class Experiment:
         # - Train
         # - Test
         # - Results
+        print(f"Running the experiment: "+ colored(self.experiment_name, 'green'))
         self.train(is_development)
         self.evaluate(is_development)
 
-    def run_development(self):
-        # Parameters
-        epochs = 1
-        dataset = self.dataset
 
         
         
