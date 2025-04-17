@@ -49,6 +49,17 @@ class Experiment:
         epochs = 1
         dataset = self.dataset
 
-        
+    def train(self):
+        # Train the model
+        pass
+    def test(self):
+        # Test the model
+        pass
+    def results(self):
+        # Save the results
+        pass
+    def preprocess(self):   
+        # Preprocess the data
+        pass
         
 
