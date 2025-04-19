@@ -86,4 +86,7 @@ tfds build data/datasets/brain_tumor_mri_dataset_kaggle --data_dir data/datasets
 # Refs
 - [How to disable tensorflow warnings](https://github.com/tensorflow/tensorflow/issues/54499#issuecomment-1049553976)
 - [How to nvdia toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)
-
+- [Visualizing](https://arxiv.org/abs/1311.2901)
+- [[Article] Do Convnets Learn Correspondence?](https://proceedings.neurips.cc/paper_files/paper/2014/file/50f6d53bcaae4f4d70d1ecf5341f6eb4-Paper.pdf)
+- [Visualization of CNN](https://github.com/bsaldivaremc2/CNN_See_output)
+    - Also on [video](https://www.youtube.com/watch?v=AaAdHxtQOKQ)
