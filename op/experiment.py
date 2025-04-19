@@ -4,6 +4,7 @@ from termcolor import colored
 from tensorflow.keras.metrics import F1Score
 from tensorflow.keras import Model
 import datetime
+from tabulate import tabulate
 
 class Experiment:
     """
@@ -32,6 +33,10 @@ class Experiment:
     #     raise NotImplementedError("Evaluate method are not implemented yet.")
 
     def train(self, is_development = False):
+        
+        # Used to measure performance and to identify the run
+        start_time = datetime.datetime.now()
+        start_time_identifier = start_time.strftime("%Y%m%d-%H%M%S")
 
         # Load data
         train_ds = self.dataset.get_train_dataset(is_development)
@@ -40,26 +45,52 @@ class Experiment:
 
         # Reduces input size when in development mode
         if is_development:
-            epochs = 1
+            epochs = 3
             stage = "dev"
         else: 
             epochs = self.epochs
             stage = "prod"
 
+        # Defines the metrics 
+        f1 = F1Score(average='macro', threshold=0.5)
+        precision_metric = tf.keras.metrics.Precision(name = 'precision')#, class_id = 4)
+
         # Defines the checkpoints
         #   If not exists, creates the directory
-        checkpoints_path = f"data/experiments/{self.experiment_name}/checkpoints/{stage}"
+        checkpoints_path = f"data/experiments/{self.experiment_name}/checkpoints/{stage}/{start_time_identifier}"
+        model_checkpoint = f"{checkpoints_path}/model"
 
-        model_checkpoint = f"{checkpoints_path}/model/{self.experiment_name}"+"-{epoch:04d}.weights.h5"
-        # Create a callback that saves the model's weights
-        cp_callback = tf.keras.callbacks.ModelCheckpoint(
-            filepath=model_checkpoint,
+        # Saves all the epochs
+        all_epochs_callback = tf.keras.callbacks.ModelCheckpoint(
+            filepath=f"{model_checkpoint}/all_epochs/{self.experiment_name}"+"-{epoch:04d}.weights.h5",
             save_weights_only=True,
             verbose=1)
-        # Save the last one and the best one
+
+        # Saves the best only
+        best_train_callback = tf.keras.callbacks.ModelCheckpoint(
+            filepath=f"{model_checkpoint}/{self.experiment_name}-best"+"-{epoch:04d}.weights.h5",
+            save_weights_only=True,
+            save_best_only=True,
+            monitor=f1.name,
+            verbose=1)
+
+        # Saves the best val only
+        best_val_callback = tf.keras.callbacks.ModelCheckpoint(
+            filepath=f"{model_checkpoint}/{self.experiment_name}-best-val"+"-{epoch:04d}.weights.h5",
+            save_weights_only=True,
+            save_best_only=True,
+            monitor='val_'+f1.name,
+            verbose=1)
+
+        # Saves the last one
+        last_callback = tf.keras.callbacks.ModelCheckpoint(
+            filepath=f"{model_checkpoint}/{self.experiment_name}-last.weights.h5",
+            save_weights_only=True,
+            verbose=1)
+
 
         # For using at tensorboard
-        log_checkpoint = f"{checkpoints_path}/logs/fit/"+datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+        log_checkpoint = f"{checkpoints_path}/logs/"
         tensorboard_callback = tf.keras.callbacks.TensorBoard(
             log_dir=log_checkpoint,
             histogram_freq=1,
@@ -70,9 +101,6 @@ class Experiment:
             profile_batch=0,
             embeddings_freq=0,
             embeddings_metadata=None)
-        
-        f1 = F1Score(average='macro', threshold=0.5)
-        precision_metric = tf.keras.metrics.Precision(name = 'precision')#, class_id = 4)
 
         self.model.compile(
             optimizer='adam',
@@ -86,10 +114,30 @@ class Experiment:
             train_ds,
             validation_data=val_ds,
             epochs=epochs, 
-            callbacks=[cp_callback, tensorboard_callback]
+            callbacks=[
+                all_epochs_callback,
+                best_train_callback,
+                best_val_callback,
+                last_callback,
+                tensorboard_callback
+            ]
         )
 
         print(history)
+
+        end_time = datetime.datetime.now()
+        print(f"\nTraining results:")
+        print(
+            tabulate(
+                [
+                    ["Start time", start_time],
+                    ["End time", end_time],
+                    ["Duration", end_time - start_time],
+                    ["Identifier", start_time_identifier]
+                ],
+                tablefmt="fancy_grid",
+                )
+            )
 
     def evaluate(self, is_development = False):
 

@@ -37,9 +37,18 @@ class ResNetExperiment(Experiment):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument('-e', '--experiments', nargs='+', default = [], help='which experiments should run.',)
     parser.add_argument('-v', '--verbose', help='increase output verbosity', action='store_true')
     parser.add_argument('-d', '--development', help='changes to dev experience', action='store_true')
     args = parser.parse_args()
 
-    ArmnetExperiment().run(args.development)
-    ResNetExperiment().run(args.development)
+    all_experiments = [
+        ArmnetExperiment(),
+        ResNetExperiment(),
+    ]
+    if args.experiments == []:
+        _ = [experiment.run(args.development) for experiment in all_experiments]
+    else:
+        for experiment in all_experiments:
+            if experiment.experiment_name in args.experiments:
+                experiment.run(args.development)

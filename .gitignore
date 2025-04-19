@@ -1,3 +1,6 @@
+# Mac OS Finder files
+.DS_Store
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -172,3 +175,14 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# Datasets
+*.png
+*.jpg
+
+# Model checkpoints
+*.ckpt
+*.pt
+*.keras
+*.h5
+events.out.tfevents.*
