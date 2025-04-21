@@ -23,19 +23,15 @@ from termcolor import colored
 # # ])
 
 def check_classes_distribution(ds):
-    # print(f"Split: {type(ds)}")
+    """Check the distribution of classes in the dataset."""
+    class_counts = {cls: 0 for cls in range(4)}
+    for _, label in ds:
+        class_counts[label.numpy()] += 1
+
     print("Class distribution:")
+    for cls, count in class_counts.items():
+        print(f"Class {cls}: {count} samples")
 
-    e = ds.take(1)
-
-    print(f"DS  : {e}")
-    print([x for x in dir(e) if not x.startswith('_')])
-    for ex in e:
-        print(f"Example size: {len(ex)}")
-
-        # img = ex['image']
-        # label = ex['label']
-        # print(f"Image shape: {img.shape}, Label: {label}")
 
 # tds = dataset.get_train_dataset()
 
@@ -61,16 +57,6 @@ ds_val   = tfds.load(dataset_name, split=validation_split_array, as_supervised=T
 ds_test  = tfds.load(dataset_name, split="test", as_supervised=True)
 
 
-ds = ds_train[0]
-ds = ds.take(1)
-
-for image, label in ds:  # example is (image, label)
-    print(image.shape, label)
-
-
-print(colored(f"Type of ds_train: {type(ds_train)}", "cyan"))
-print(colored(f"Type of first item in ds_train: {type(ds_train[0])}", "blue"))
-print(colored(f"Type of first element in ds_train[0]: {type(list(ds_train[0].as_numpy_iterator())[0])}", "green"))
 print(
     tabulate(
         [
@@ -83,14 +69,6 @@ print(
         )
     )
 
-ds_test = ds_test.take(1)
-for test_example in ds_test:
-    # print(f"Test example: {test_example}")
-    try:
-        print(test_example["label"])
-    except:
-        print(colored("test_example['label'] not available", "red"))
-        pass
 
 
     
@@ -104,7 +82,5 @@ for split_idx, split in enumerate(ds_train):
     print(f"Split type: {type(split)}")
     print(f"Split length: {len(split)}")
     
-    print(split["image"])
-    print(list(split.keys()))
     check_classes_distribution(split)
     print()
