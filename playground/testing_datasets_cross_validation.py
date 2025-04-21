@@ -1,4 +1,4 @@
-import masters.data.datasets.brain_tumor_mri_dataset_kaggle
+import masters.datasets.brain_tumor_mri_dataset_kaggle
 import tensorflow_datasets as tfds
 from tabulate import tabulate
 from termcolor import colored
