@@ -43,7 +43,7 @@ class ArmnetKFoldExperiment(Experiment):
         )
         epochs = 50
         model = RMFNet()
-        experiment_name = "armnet_experiment"
+        experiment_name = "armnet_folds_experiment"
         super().__init__(experiment_name, model, epochs, dataset, folds)
 
 
