@@ -31,6 +31,7 @@ docker run -it -p 8888:8888 tensorflow/tensorflow:latest-gpu-jupyter
 
 ## Building dockerfile
 ```bash
+docker build -t base_tensorflow:latest -f dockerfiles/base.Dockerfile . 
 docker build -t masters_project:latest -f Dockerfile .
 ``` 
 
@@ -73,6 +74,10 @@ python experiments/armnet_experiment.py -d -e resnet_experiment
 
 # Building the Dataset
 Creating a new dataset
+
+```bash
+pip install pip install -q tfds-nightly apache-beam mlcroissant
+```
 
 ```bash
 tfds new brain_tumor_mri_dataset_kaggle
