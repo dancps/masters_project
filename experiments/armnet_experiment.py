@@ -26,7 +26,7 @@ class ArmnetExperiment(Experiment):
         super().__init__(experiment_name, model, epochs, dataset)
 
 
-class ArmnetKFoldExperiment(Experiment):
+class Armnet10FoldExperiment(Experiment):
     """
     x
     """
@@ -43,7 +43,28 @@ class ArmnetKFoldExperiment(Experiment):
         )
         epochs = 50
         model = RMFNet()
-        experiment_name = "armnet_folds_experiment"
+        experiment_name = "armnet_10_folds_experiment"
+        super().__init__(experiment_name, model, epochs, dataset, folds)
+
+
+class Armnet5FoldExperiment(Experiment):
+    """
+    x
+    """
+
+    def __init__(self, development=False):
+        folds = 5
+        dataset = Dataset(
+            dataset_name="brain_tumor_mri_dataset_kaggle",
+            input_shape=(224, 224),
+            folds=folds,
+            validation_split_size=0.2,
+            batch_size=64,
+            seed=123,
+        )
+        epochs = 50
+        model = RMFNet()
+        experiment_name = "armnet_5_folds_experiment"
         super().__init__(experiment_name, model, epochs, dataset, folds)
 
 
@@ -74,6 +95,60 @@ class ResNetExperiment(Experiment):
         experiment_name = "resnet_experiment"
         super().__init__(experiment_name, model, epochs, dataset)
 
+class ResNet10FoldsExperiment(Experiment):
+    """
+    x
+    """
+
+    def __init__(self, development=False):
+        dataset = Dataset(
+            "brain_tumor_mri_dataset_kaggle",
+            input_shape=(224, 224),
+            folds=10,
+            validation_split_size=0.2,
+            batch_size=64,
+            seed=123,
+        )
+        epochs = 50
+        model = ResNet50(
+            include_top=True,
+            weights=None,
+            input_tensor=None,
+            input_shape=None,
+            pooling=None,
+            classes=4,
+            classifier_activation="softmax",
+        )
+        experiment_name = "resnet_10_folds_experiment"
+        super().__init__(experiment_name, model, epochs, dataset)
+
+class ResNet5FoldsExperiment(Experiment):
+    """
+    x
+    """
+
+    def __init__(self, development=False):
+        dataset = Dataset(
+            "brain_tumor_mri_dataset_kaggle",
+            input_shape=(224, 224),
+            folds=5,
+            validation_split_size=0.2,
+            batch_size=64,
+            seed=123,
+        )
+        epochs = 50
+        model = ResNet50(
+            include_top=True,
+            weights=None,
+            input_tensor=None,
+            input_shape=None,
+            pooling=None,
+            classes=4,
+            classifier_activation="softmax",
+        )
+        experiment_name = "resnet_5_folds_experiment"
+        super().__init__(experiment_name, model, epochs, dataset)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -92,9 +167,13 @@ if __name__ == "__main__":
 
     all_experiments = [
         ArmnetExperiment(),
-        ArmnetKFoldExperiment(),
+        Armnet10FoldExperiment(),
+        Armnet5FoldExperiment(),
         ResNetExperiment(),
+        ResNet10FoldsExperiment(),
+        ResNet5FoldsExperiment()
     ]
+    
     if args.experiments == []:
         _ = [experiment.run(args.development) for experiment in all_experiments]
     else:

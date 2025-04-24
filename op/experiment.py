@@ -6,7 +6,8 @@ from tensorflow.keras import Model
 import datetime
 from tabulate import tabulate
 from termcolor import colored
-
+from pprint import pprint
+import json
 
 class Experiment:
     """
@@ -47,17 +48,17 @@ class Experiment:
     def train(self, is_development=False):
         experiment_start_time = datetime.datetime.now()
         experiment_start_time_id = experiment_start_time.strftime("%Y%m%d-%H%M%S")
-
+        folds_results = []
         if self.is_k_fold:
             # Load data
             train_ds = self.dataset.get_train_dataset(is_development)
             val_ds = self.dataset.get_validation_dataset(is_development)
-            folds_dir = f"{self.folds}-folds-{experiment_start_time_id}/"
+            folds_dir = f"{self.folds}-folds-{experiment_start_time_id}"
         else:
             # Load data
             train_ds = [self.dataset.get_train_dataset(is_development)]
             val_ds = [self.dataset.get_validation_dataset(is_development)]
-            folds_dir = f"1-folds-{experiment_start_time_id}/"
+            folds_dir = f"1-folds-{experiment_start_time_id}"
 
         for fold in range(self.folds):
             print(colored(f"Fold {fold+1}/{self.folds}", "cyan"))
@@ -76,7 +77,7 @@ class Experiment:
 
             # Reduces input size when in development mode
             if is_development:
-                epochs = 3
+                epochs = 2
                 stage = "dev"
             else:
                 epochs = self.epochs
@@ -169,7 +170,10 @@ class Experiment:
                 ],
             )
 
-            print(history)
+            print(f"{colored("History:", "cyan")}{history}")
+            print(history.history)
+
+            
 
             end_time = datetime.datetime.now()
             print(f"\nTraining results:")
@@ -184,6 +188,19 @@ class Experiment:
                     tablefmt="fancy_grid",
                 )
             )
+            # Saves at checkpoints_path
+            results_fold = {
+                "fold": k_fold_identifier,
+                "history": history.history,
+                "start_time": start_time.isoformat(),
+                "end_time": end_time.isoformat(),
+                "duration": (end_time - start_time).total_seconds(),
+                "identifier": start_time_identifier,
+            }
+
+            print(colored("Fold results:", "cyan"))
+            pprint(results_fold)
+
         experiment_end_time = datetime.datetime.now()
         # experiment_end_time_id = experiment_end_time.strftime("%Y%m%d-%H%M%S")
         print("---------------------------------------------------------------------")
@@ -198,6 +215,27 @@ class Experiment:
                     tablefmt="fancy_grid",
                 )
             )
+        folds_results.append(results_fold)
+        final_results = {
+            "experiment_name": self.experiment_name,
+            "epochs": epochs,
+            "stage": stage,
+            "folds": self.folds,
+            "experiment_start_time": experiment_start_time.isoformat(),
+            "experiment_end_time": experiment_end_time.isoformat(),
+            "duration": (experiment_end_time - experiment_start_time).total_seconds(),
+            "identifier": experiment_start_time_id,
+            "folds_results": folds_results,
+        }
+        print(colored("Final results:", "green"))
+        pprint(final_results)
+
+        # Save final results into a JSON file
+        results_path = f"data/experiments/{self.experiment_name}/checkpoints/{stage}/{folds_dir}/{self.experiment_name}_{experiment_start_time_id}_final_results.json"
+        with open(results_path, "w") as json_file:
+            json.dump(final_results, json_file, indent=4)
+        print("Final results saved to "+colored(f"{results_path}", "green"))
+        
 
     def evaluate(self, is_development=False):
 
