@@ -45,15 +45,19 @@ class Experiment:
     #     raise NotImplementedError("Evaluate method are not implemented yet.")
 
     def train(self, is_development=False):
+        experiment_start_time = datetime.datetime.now()
+        experiment_start_time_id = experiment_start_time.strftime("%Y%m%d-%H%M%S")
 
         if self.is_k_fold:
             # Load data
             train_ds = self.dataset.get_train_dataset(is_development)
             val_ds = self.dataset.get_validation_dataset(is_development)
+            folds_dir = f"{self.folds}-folds-{experiment_start_time_id}/"
         else:
             # Load data
             train_ds = [self.dataset.get_train_dataset(is_development)]
             val_ds = [self.dataset.get_validation_dataset(is_development)]
+            folds_dir = f"1-folds-{experiment_start_time_id}/"
 
         for fold in range(self.folds):
             print(colored(f"Fold {fold+1}/{self.folds}", "cyan"))
@@ -87,9 +91,12 @@ class Experiment:
             k_fold_dir = ""
             if self.is_k_fold:
                 k_fold_identifier = f"fold-{fold+1}"
-                k_fold_dir = f"/{k_fold_identifier}"
+                k_fold_dir = f"{k_fold_identifier}-{start_time_identifier}"
+            else:
+                k_fold_identifier = "fold-1"
+                k_fold_dir = f"{k_fold_identifier}-{start_time_identifier}"
 
-            checkpoints_path = f"data/experiments/{self.experiment_name}/checkpoints/{stage}{k_fold_dir}/{start_time_identifier}"
+            checkpoints_path = f"data/experiments/{self.experiment_name}/checkpoints/{stage}/{folds_dir}/{k_fold_dir}"
             model_checkpoint = f"{checkpoints_path}/model"
 
             # Saves all the epochs
@@ -173,6 +180,20 @@ class Experiment:
                         ["End time", end_time],
                         ["Duration", end_time - start_time],
                         ["Identifier", start_time_identifier],
+                    ],
+                    tablefmt="fancy_grid",
+                )
+            )
+        experiment_end_time = datetime.datetime.now()
+        # experiment_end_time_id = experiment_end_time.strftime("%Y%m%d-%H%M%S")
+        print("---------------------------------------------------------------------")
+        print(
+                tabulate(
+                    [
+                        ["Experiment start time", experiment_start_time],
+                        ["Experiment end time", experiment_end_time],
+                        ["Duration", experiment_end_time - experiment_start_time],
+                        ["Identifier", experiment_start_time_id],
                     ],
                     tablefmt="fancy_grid",
                 )
