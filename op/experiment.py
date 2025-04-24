@@ -198,8 +198,11 @@ class Experiment:
                 "identifier": start_time_identifier,
             }
 
-            print(colored("Fold results:", "cyan"))
+            print(colored("Fold re" \
+            "sults:", "cyan"))
             pprint(results_fold)
+            folds_results.append(results_fold)
+
 
         experiment_end_time = datetime.datetime.now()
         # experiment_end_time_id = experiment_end_time.strftime("%Y%m%d-%H%M%S")
@@ -215,7 +218,6 @@ class Experiment:
                     tablefmt="fancy_grid",
                 )
             )
-        folds_results.append(results_fold)
         final_results = {
             "experiment_name": self.experiment_name,
             "epochs": epochs,
