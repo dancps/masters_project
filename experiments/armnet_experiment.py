@@ -3,7 +3,7 @@ from masters.op.dataset import Dataset
 from masters.models.armnet import RMFNet
 from tensorflow.keras.applications import ResNet50
 import argparse
-
+from termcolor import colored
 
 class ArmnetExperiment(Experiment):
     """
@@ -46,25 +46,47 @@ class Armnet10FoldExperiment(Experiment):
         experiment_name = "armnet_10_folds_experiment"
         super().__init__(experiment_name, model, epochs, dataset, folds)
 
-class Armnet128Experiment(Experiment):
+class ArmnetSupExperiment(Experiment):
     """
     ArmnetExperiment is a subclass of the Experiment class.
     It is used to run the Armnet experiment.
     """
-
+    
     def __init__(self, development=False):
+        folds = 10
         dataset = Dataset(
             dataset_name="brain_tumor_mri_dataset_kaggle",
-            input_shape=(224, 224),
+            input_shape=(224*2, 224*2),
             folds=10,
             validation_split_size=0.2,
             batch_size=128,
             seed=123,
         )
+        epochs = 150
+        model = RMFNet()
+        experiment_name = "armnet_Sup_experiment"
+        super().__init__(experiment_name, model, epochs, dataset, folds)
+
+class Armnet448Experiment(Experiment):
+    """
+    ArmnetExperiment is a subclass of the Experiment class.
+    It is used to run the Armnet experiment.
+    """
+    
+    def __init__(self, development=False):
+        folds = 10
+        dataset = Dataset(
+            dataset_name="brain_tumor_mri_dataset_kaggle",
+            input_shape=(224*2, 224*2),
+            folds=10,
+            validation_split_size=0.2,
+            batch_size=64,
+            seed=123,
+        )
         epochs = 50
         model = RMFNet()
-        experiment_name = "armnet_bs128_experiment"
-        super().__init__(experiment_name, model, epochs, dataset)
+        experiment_name = "armnet_448_experiment"
+        super().__init__(experiment_name, model, epochs, dataset, folds)
 
 # class Armnet5FoldExperiment(Experiment):
 #     """
@@ -120,6 +142,7 @@ class ResNet10FoldsExperiment(Experiment):
     """
 
     def __init__(self, development=False):
+        folds = 10
         dataset = Dataset(
             "brain_tumor_mri_dataset_kaggle",
             input_shape=(224, 224),
@@ -139,7 +162,7 @@ class ResNet10FoldsExperiment(Experiment):
             classifier_activation="softmax",
         )
         experiment_name = "resnet_10_folds_experiment"
-        super().__init__(experiment_name, model, epochs, dataset)
+        super().__init__(experiment_name, model, epochs, dataset,folds)
 
 # class ResNet5FoldsExperiment(Experiment):
 #     """
@@ -187,13 +210,19 @@ if __name__ == "__main__":
     all_experiments = [
         ArmnetExperiment(),
         Armnet10FoldExperiment(),
-        Armnet128Experiment(),
         ResNetExperiment(),
-        ResNet10FoldsExperiment()
+        ResNet10FoldsExperiment(),
+        # Armnet448Experiment(),
+        # ArmnetSupExperiment(),
     ]
     
     if args.experiments == []:
-        _ = [experiment.run(args.development) for experiment in all_experiments]
+        # _ = [experiment.run(args.development) for experiment in all_experiments]
+        for experiment in all_experiments:
+            try:
+                experiment.run(args.development)
+            except Exception as e:
+                print(colored(f"Error in {experiment.experiment_name}: {e}", "red"))
     else:
         for experiment in all_experiments:
             if experiment.experiment_name in args.experiments:
