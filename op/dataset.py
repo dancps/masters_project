@@ -60,7 +60,7 @@ class Dataset:
             self.ds_test = tfds.load(dataset_name, split="test", as_supervised=True)
 
         # Preprocessing method
-        def preproc(tf_dataset):
+        def preproc(tf_dataset, batch_size_applied):
             def p(x):
                 return (
                     x.cache()
@@ -76,7 +76,7 @@ class Dataset:
                         ),
                         num_parallel_calls=tf.data.AUTOTUNE,
                     )
-                    .batch(batch_size)
+                    .batch(batch_size_applied)
                     .prefetch(tf.data.AUTOTUNE)
                 )
 
@@ -88,9 +88,9 @@ class Dataset:
         # .batch(batch_size)
 
         # Applies preprocessing at the sets
-        self.ds_train = preproc(self.ds_train)
-        self.ds_val = preproc(self.ds_val)
-        self.ds_test = preproc(self.ds_test)
+        self.ds_train = preproc(self.ds_train, batch_size)
+        self.ds_val = preproc(self.ds_val, batch_size)
+        self.ds_test = preproc(self.ds_test,128)
 
     def _get_dataset(self, dataset, development_samples=10, development=False):
         if development:
