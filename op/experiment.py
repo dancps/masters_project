@@ -8,6 +8,7 @@ from tabulate import tabulate
 from termcolor import colored
 from pprint import pprint
 import json
+import os
 
 class Experiment:
     """
@@ -38,12 +39,6 @@ class Experiment:
         self.folds = folds  # TODO: Currently, folds is defined both in dataset and at here. I should review it.
         self.is_k_fold = folds > 1
         # self.metrics = metrics
-
-    # def train(self):
-    #     raise NotImplementedError("Train method are not implemented yet.")
-
-    # def test(self):
-    #     raise NotImplementedError("Evaluate method are not implemented yet.")
 
     def train(self, is_development=False):
         experiment_start_time = datetime.datetime.now()
@@ -239,12 +234,29 @@ class Experiment:
         print("Final results saved to "+colored(f"{results_path}", "green"))
         
 
-    def evaluate(self, is_development=False):
+    def evaluate(self, checkpoint = None, is_development=False):
+        print("Evaluating the experiment: " + colored(self.experiment_name, "green"))
+        if not checkpoint is None:
+            print(f"Loading checkpoint: {os.path.basename(checkpoint)}")
+            self.model.build(input_shape=(None, 224, 224, 3))
+
+            f1 = F1Score(average="macro", threshold=0.5)
+            precision_metric = tf.keras.metrics.Precision(name="precision")  # , class_id = 4)
+            self.model.compile(
+                optimizer="adam",
+                loss="categorical_crossentropy",
+                metrics=["accuracy", precision_metric, f1],
+            ) 
+            # self.model.summary()
+            self.model.load_weights(checkpoint)
+            # .set_weights(weights)
+        
 
         test_ds = self.dataset.get_test_dataset(is_development)
 
-        print("Evaluate")
         result = self.model.evaluate(test_ds)
+        print(result)
+        print(self.model.metrics_names)
         print(dict(zip(self.model.metrics_names, result)))
 
     def run(self, is_development=False):
