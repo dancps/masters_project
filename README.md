@@ -96,3 +96,84 @@ tfds build data/datasets/brain_tumor_mri_dataset_kaggle --data_dir data/datasets
 - [Visualization of CNN](https://github.com/bsaldivaremc2/CNN_See_output)
     - Also on [video](https://www.youtube.com/watch?v=AaAdHxtQOKQ)
 - [Running docker as non-root](https://medium.com/redbubble/running-a-docker-container-as-a-non-root-user-7d2e00f8ee15)
+
+
+
+# Dataset
+
+```
+dataset/
+├── test
+│   ├── glioma
+│   │   ├── Te-gl_0010.jpg
+│   │   ├── ...
+│   │   └── Te-glTr_0009.jpg
+│   ├── meningioma
+│   │   ├── Te-me_0010.jpg
+│   │   ├── ...
+│   │   └── Te-meTr_0009.jpg
+│   ├── notumor
+│   │   ├── Te-no_0010.jpg
+│   │   ├── ...
+│   │   └── Te-noTr_0009.jpg
+│   └── pituitary
+│       ├── Te-pi_0010.jpg
+│       ├── ...
+│       └── Te-piTr_0009.jpg
+└── train
+    ├── glioma
+    │   ├── Tr-gl_0010.jpg
+    │   ├── ...
+    │   └── Tr-glTr_0009.jpg
+    ├── meningioma
+    │   ├── Tr-me_0010.jpg
+    │   ├── ...
+    │   └── Tr-meTr_0009.jpg
+    ├── notumor
+    │   ├── Tr-no_0010.jpg
+    │   ├── ...
+    │   └── Tr-noTr_0009.jpg
+    └── pituitary
+        ├── Tr-pi_0010.jpg
+        ├── ...
+        └── Tr-piTr_0009.jpg
+```
+
+
+
+# Folders: 
+
+masters_project/
+├── data/
+│   └── experiments/
+│       ├── ...
+│       └── example_experiment/
+│           └── checkpoints/
+│               ├── dev/
+│               │   └── ...
+│               └── prod/
+│                   └── 10-folds-20250424-093616
+│                       ├── fold-1-20250424-093616
+│                       ├── fold-2-20250424-093616
+│                       ├── ...
+│                       └── fold-10-20250424-093616
+│                           ├── logs
+│                           │   ├── train
+│                           │   └── validation
+│                           └── model
+│                               └── all_epochs
+├── datasets/
+│   └── brain_tumor_mri_dataset_kaggle
+│       └── ...
+├── dockerfiles/
+├── experiments/
+│   └── armnet_experiment.py
+├── models/
+│   └── armnet.py
+├── op/
+│   ├── dataset.py
+│   ├── experiment.py
+│   └── preprocess.py
+├── playground/
+├── scripts/
+└── utils/
