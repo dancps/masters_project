@@ -25,10 +25,12 @@ class Block(Layer):
         self.bn_layers = [BatchNormalization() for _ in range(4)]
         self.relu = ReLU()
         self.concat = Concatenate()
-        self.conv1x1_1 = Conv2D(2 * filters, 1, padding='same')
-        self.conv1x1_2 = Conv2D(2 * filters, 1, padding='same')
+        self.conv1x1_1 = Conv2D(2 * filters, 1)#, padding='same')
+        self.conv1x1_2 = Conv2D(2 * filters, 1)#, padding='same')
+        self.conv1x1_3 = Conv2D(2 * filters, 1)#, padding='same')
         self.bn1x1_1 = BatchNormalization()
         self.bn1x1_2 = BatchNormalization()
+        self.bn1x1_3 = BatchNormalization()
         self.add = Add()
 
     def call(self, inputs):
@@ -37,9 +39,64 @@ class Block(Layer):
         c = self.relu(self.bn_layers[2](self.conv_layers[2](b)))
         d = self.relu(self.bn_layers[3](self.conv_layers[3](c)))
         
-        mid = self.relu(self.bn1x1_1(self.conv1x1_1(self.concat([a, b, c, d]))))
+        concat = self.concat([a, b, c, d])
+
+        mid = self.relu(self.bn1x1_1(self.conv1x1_1(concat)))
         x = self.relu(self.bn1x1_2(self.conv1x1_2(inputs)))
-        return self.add([mid, x])
+
+        add = self.add([mid, x])
+
+        y = self.relu(self.bn1x1_3(self.conv1x1_3(add)))
+
+        return y
+    
+    def build(self, input_shape):
+        print("input_shape", input_shape)
+        # Initialize the convolutional layers with the appropriate number of filters
+        temp_input_shape = input_shape
+        for i in range(4):
+            self.conv_layers[i].build(temp_input_shape) # Same padding type keeps the output shape the same
+            temp_input_shape = self.conv_layers[i].compute_output_shape(temp_input_shape)
+            self.bn_layers[i].build(temp_input_shape)
+            temp_input_shape = self.bn_layers[i].compute_output_shape(temp_input_shape)
+            # Update input_shape for the next layer
+            print(f"conv_layers[{i}] params:", self.conv_layers[i].count_params())
+            print(f"bn_layers[{i}] params:", self.bn_layers[i].count_params())
+            # it is needed to calc on each iteration because from the first layer the output shape is different
+        
+        # Initialize the 1x1 convolutional layers
+        # Since we are concatenating 4 layers, the output shape is different. 
+        # It will be 4 times the number of filters.
+        concat_shape = list(temp_input_shape)
+        concat_shape[-1] = 4 * self.filters
+        self.conv1x1_1.build(concat_shape)
+        print("conv1x1_1 params:", self.conv1x1_1.count_params())
+        self.bn1x1_1.build(self.conv1x1_1.compute_output_shape(concat_shape))
+        print("bn1x1_1 params:", self.bn1x1_1.count_params())
+        
+        # The second 1x1 conv takes the original input shape
+        self.conv1x1_2.build(input_shape)
+        print("conv1x1_2 params:", self.conv1x1_2.count_params())
+        self.bn1x1_2.build(self.conv1x1_2.compute_output_shape(input_shape))
+        print("bn1x1_2 params:", self.bn1x1_2.count_params())
+        
+        add_shape = self.conv1x1_2.compute_output_shape(input_shape)
+        
+        self.conv1x1_3.build(add_shape)
+        print("conv1x1_3 params:", self.conv1x1_3.count_params())
+        self.bn1x1_3.build(self.conv1x1_3.compute_output_shape(add_shape))
+        print("bn1x1_3 params:", self.bn1x1_3.count_params())
+        print()
+        
+        # Call the parent build method
+        super(Block, self).build(input_shape)
+        
+    def compute_output_shape(self, input_shape):
+        # The output shape of the Block is the same as the input shape
+        # but with the number of filters doubled
+        output_shape = list(input_shape)
+        output_shape[-1] = 2 * self.filters
+        return tuple(output_shape)
 
 class GlobalAttentionBlock(Layer):
     def __init__(self, **kwargs):
@@ -50,12 +107,30 @@ class GlobalAttentionBlock(Layer):
         self.sigmoid = Activation('sigmoid')
         self.multiply = Multiply()
 
+    def build(self, input_shape):
+        # Initialize the 1x1 convolutional layer
+        # Input shape will be (batch, height, width, 2) after concatenation
+        concat_shape = list(input_shape)
+        concat_shape[-1] = 2  # Mean and max pooling outputs concatenated
+        self.conv1x1.build(concat_shape)
+        
+        # Call the parent build method
+        super(GlobalAttentionBlock, self).build(input_shape)
+        
+    def compute_output_shape(self, input_shape):
+        # The output shape of GlobalAttentionBlock is the same as the input shape
+        # because the attention map is multiplied with the original input
+        return input_shape
+
     def call(self, inputs):
         x = Lambda(lambda x: K.mean(x, axis=-1, keepdims=True))(inputs)
         y = Lambda(lambda x: K.max(x, axis=-1, keepdims=True))(inputs)
-        x = self.relu(self.conv1x1(self.concat([x, y])))
-        x = self.sigmoid(x)
-        return self.multiply([x, inputs])
+        
+        concat = self.concat([x, y])
+        
+        attention = self.sigmoid(self.conv1x1(self.relu(concat)))
+        
+        return self.multiply([attention, inputs])
 
 class SelfAttention(Layer):
     def __init__(self, **kwargs):
@@ -72,28 +147,41 @@ class SelfAttention(Layer):
         self.relu = Activation('relu')
 
     def build(self, input_shape):
-        # Define the shape of the Conv2D layers based on input_shape
-        self.conv1x1_1 = Conv2D(input_shape[3] // 8, 1, padding='same')
-        self.conv1x1_2 = Conv2D(input_shape[3] // 8, 1, padding='same')
-        self.conv1x1_3 = Conv2D(input_shape[3] // 8, 1, padding='same')
-        self.conv1x1_4 = Conv2D(input_shape[3], 1, padding='same')
+        # a,b,c
+        self.conv1x1_1 = Conv2D(input_shape[-1] // 8, 1, padding='same')
+        self.conv1x1_2 = Conv2D(input_shape[-1] // 8, 1, padding='same')
+        self.conv1x1_3 = Conv2D(input_shape[-1] // 8, 1, padding='same')
+
+        # out
+        self.conv1x1_4 = Conv2D(input_shape[-1], 1, padding='same')
+
+        self.conv1x1_1.build(input_shape)
+        self.conv1x1_2.build(input_shape)
+        self.conv1x1_3.build(input_shape)
+
+        # Build output conv
+        output_shape = (input_shape[0], input_shape[1], input_shape[2], input_shape[3] // 8)
+        self.conv1x1_4.build(output_shape)
+
+
         super(SelfAttention, self).build(input_shape)  # Be sure to call this at the end
 
 
     def call(self, inputs):
-        self.shape = inputs.shape
+        shape = inputs.shape
+        # self.shape = inputs.shape
         
         a = self.relu(self.conv1x1_1(inputs))
         b = self.relu(self.conv1x1_2(inputs))
         c = self.relu(self.conv1x1_3(inputs))
         
-        a = self.reshape((self.shape[1] * self.shape[2], self.shape[3] // 8))(a)
-        b = self.permute(self.reshape((self.shape[1] * self.shape[2], self.shape[3] // 8))(b), (0, 2, 1))
-        c = self.reshape((self.shape[1] * self.shape[2], self.shape[3] // 8))(c)
+        a = self.reshape((shape[1] * shape[2], shape[3] // 8))(a)
+        b = self.permute(self.reshape((shape[1] * shape[2], shape[3] // 8))(b), (0, 2, 1))
+        c = self.reshape((shape[1] * shape[2], shape[3] // 8))(c)
         
         inter = self.softmax(self.batch_dot(a, b))
         out = self.batch_dot(inter, c)
-        out = self.relu(self.conv1x1_4(self.reshape((self.shape[1], self.shape[2], self.shape[3] // 8))(out)))
+        out = self.relu(self.conv1x1_4(self.reshape((shape[1], shape[2], shape[3] // 8))(out)))
         return out
 
 class ChannelAttention(Layer):
@@ -107,12 +195,21 @@ class ChannelAttention(Layer):
         self.multiply = Multiply()
 
     def build(self, input_shape):
-        self.conv1x1_1 = Conv2D(input_shape[3] // 8, 1, padding='same', kernel_initializer='he_normal', use_bias=False)
-        self.conv1x1_2 = Conv2D(input_shape[3], 1, padding='same', kernel_initializer='he_normal', use_bias=False)
+        # input_shape is (batch, height, width, channels)
+        # at least 8 channels
+        self.conv1x1_1 = Conv2D(input_shape[-1] // 8, 1, padding='same', kernel_initializer='he_normal', use_bias=False)
+        self.conv1x1_2 = Conv2D(input_shape[-1], 1, padding='same', kernel_initializer='he_normal', use_bias=False)
+        self.conv1x1_1.build(input_shape)
+        conv1x1_output_shape = self.conv1x1_1.compute_output_shape(input_shape)
+        self.conv1x1_2.build(conv1x1_output_shape)
+        super(ChannelAttention, self).build(input_shape)
 
     def call(self, inputs):
-        shape = K.int_shape(inputs)
+        shape = inputs.shape
         x = self.max_pool(pool_size=(shape[1], shape[2]))(inputs)
         x = self.relu(self.conv1x1_1(x))
         x = self.sigmoid(self.conv1x1_2(x))
         return self.multiply([x, inputs])
+    
+    def compute_output_shape(self, input_shape):
+        return input_shape
