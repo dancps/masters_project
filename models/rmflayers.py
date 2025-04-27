@@ -51,7 +51,7 @@ class Block(Layer):
         return y
     
     def build(self, input_shape):
-        print("input_shape", input_shape)
+        # print("input_shape", input_shape)
         # Initialize the convolutional layers with the appropriate number of filters
         temp_input_shape = input_shape
         for i in range(4):
@@ -60,8 +60,8 @@ class Block(Layer):
             self.bn_layers[i].build(temp_input_shape)
             temp_input_shape = self.bn_layers[i].compute_output_shape(temp_input_shape)
             # Update input_shape for the next layer
-            print(f"conv_layers[{i}] params:", self.conv_layers[i].count_params())
-            print(f"bn_layers[{i}] params:", self.bn_layers[i].count_params())
+            # print(f"conv_layers[{i}] params:", self.conv_layers[i].count_params())
+            # print(f"bn_layers[{i}] params:", self.bn_layers[i].count_params())
             # it is needed to calc on each iteration because from the first layer the output shape is different
         
         # Initialize the 1x1 convolutional layers
@@ -70,23 +70,23 @@ class Block(Layer):
         concat_shape = list(temp_input_shape)
         concat_shape[-1] = 4 * self.filters
         self.conv1x1_1.build(concat_shape)
-        print("conv1x1_1 params:", self.conv1x1_1.count_params())
+        # print("conv1x1_1 params:", self.conv1x1_1.count_params())
         self.bn1x1_1.build(self.conv1x1_1.compute_output_shape(concat_shape))
-        print("bn1x1_1 params:", self.bn1x1_1.count_params())
+        # print("bn1x1_1 params:", self.bn1x1_1.count_params())
         
         # The second 1x1 conv takes the original input shape
         self.conv1x1_2.build(input_shape)
-        print("conv1x1_2 params:", self.conv1x1_2.count_params())
+        # print("conv1x1_2 params:", self.conv1x1_2.count_params())
         self.bn1x1_2.build(self.conv1x1_2.compute_output_shape(input_shape))
-        print("bn1x1_2 params:", self.bn1x1_2.count_params())
+        # print("bn1x1_2 params:", self.bn1x1_2.count_params())
         
         add_shape = self.conv1x1_2.compute_output_shape(input_shape)
         
         self.conv1x1_3.build(add_shape)
-        print("conv1x1_3 params:", self.conv1x1_3.count_params())
+        # print("conv1x1_3 params:", self.conv1x1_3.count_params())
         self.bn1x1_3.build(self.conv1x1_3.compute_output_shape(add_shape))
-        print("bn1x1_3 params:", self.bn1x1_3.count_params())
-        print()
+        # print("bn1x1_3 params:", self.bn1x1_3.count_params())
+        # print()
         
         # Call the parent build method
         super(Block, self).build(input_shape)

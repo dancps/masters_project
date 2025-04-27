@@ -90,7 +90,7 @@ class Dataset:
         # Applies preprocessing at the sets
         self.ds_train = preproc(self.ds_train, batch_size)
         self.ds_val = preproc(self.ds_val, batch_size)
-        self.ds_test = preproc(self.ds_test,128)
+        self.ds_test = preproc(self.ds_test, batch_size)
 
     def _get_dataset(self, dataset, development_samples=10, development=False):
         if development:

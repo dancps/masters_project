@@ -111,6 +111,7 @@ class Experiment:
                 save_best_only=True,
                 monitor=f1.name,
                 verbose=1,
+                mode="max"
             )
 
             # Saves the best val only
@@ -121,6 +122,7 @@ class Experiment:
                 save_best_only=True,
                 monitor="val_" + f1.name,
                 verbose=1,
+                mode="max"
             )
 
             # Saves the last one
@@ -149,7 +151,7 @@ class Experiment:
                 # loss='categorical',
                 loss="categorical_crossentropy",
                 # loss=tf.losses.SparseCategoricalCrossentropy(from_logits=False), #'categorical_crossentropy', #
-                metrics=["accuracy", precision_metric, f1],
+                metrics=[f1, "accuracy", precision_metric],
             )  # F1Score()
 
             history = self.model.fit(
@@ -165,8 +167,8 @@ class Experiment:
                 ],
             )
 
-            print(f"{colored("History:", "cyan")}{history}")
-            print(history.history)
+            # print(f"{colored("History:", "cyan")}")
+            # print(history.history)
 
             
 
@@ -192,10 +194,9 @@ class Experiment:
                 "duration": (end_time - start_time).total_seconds(),
                 "identifier": start_time_identifier,
             }
-
-            print(colored("Fold re" \
-            "sults:", "cyan"))
-            pprint(results_fold)
+            # TODO: Uncomment this to debug
+            # print(colored("Fold results:", "cyan"))
+            # pprint(results_fold)
             folds_results.append(results_fold)
 
 
@@ -224,8 +225,9 @@ class Experiment:
             "identifier": experiment_start_time_id,
             "folds_results": folds_results,
         }
-        print(colored("Final results:", "green"))
-        pprint(final_results)
+        # # Uncomment this to debug
+        # print(colored("Final results:", "green"))
+        # pprint(final_results)
 
         # Save final results into a JSON file
         results_path = f"data/experiments/{self.experiment_name}/checkpoints/{stage}/{folds_dir}/{self.experiment_name}_{experiment_start_time_id}_final_results.json"
@@ -245,7 +247,7 @@ class Experiment:
             self.model.compile(
                 optimizer="adam",
                 loss="categorical_crossentropy",
-                metrics=["accuracy", precision_metric, f1],
+                metrics=[f1, "accuracy", precision_metric],
             ) 
             # self.model.summary()
             self.model.load_weights(checkpoint)
@@ -273,4 +275,4 @@ class Experiment:
         # - Results
         print(f"Running the experiment: " + colored(self.experiment_name, "green"))
         self.train(is_development)
-        self.evaluate(is_development)
+        self.evaluate(None,is_development)
