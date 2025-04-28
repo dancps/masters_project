@@ -2,7 +2,9 @@ from masters.op.dataset import Dataset
 import tensorflow as tf
 from termcolor import colored
 from tensorflow.keras.metrics import F1Score
+from tensorflow.keras.optimizers import Adam
 from tensorflow.keras import Model
+# import keras_tuner as kt
 import datetime
 from tabulate import tabulate
 from termcolor import colored
@@ -147,12 +149,10 @@ class Experiment:
             )
 
             self.model.compile(
-                optimizer="adam",
-                # loss='categorical',
+                optimizer=Adam(learning_rate=0.001),
                 loss="categorical_crossentropy",
-                # loss=tf.losses.SparseCategoricalCrossentropy(from_logits=False), #'categorical_crossentropy', #
                 metrics=[f1, "accuracy", precision_metric],
-            )  # F1Score()
+            )
 
             history = self.model.fit(
                 current_train_ds,
@@ -234,7 +234,6 @@ class Experiment:
         with open(results_path, "w") as json_file:
             json.dump(final_results, json_file, indent=4)
         print("Final results saved to "+colored(f"{results_path}", "green"))
-        
 
     def evaluate(self, checkpoint = None, is_development=False):
         print("Evaluating the experiment: " + colored(self.experiment_name, "green"))
@@ -257,9 +256,10 @@ class Experiment:
         test_ds = self.dataset.get_test_dataset(is_development)
 
         result = self.model.evaluate(test_ds)
-        print(result)
-        print(self.model.metrics_names)
+        # print(result)
+        # print(self.model.metrics_names)
         print(dict(zip(self.model.metrics_names, result)))
+        return dict(zip(self.model.metrics_names, result))
 
     def run(self, is_development=False):
         # Run the steps of the experiment
