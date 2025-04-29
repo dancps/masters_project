@@ -241,7 +241,7 @@ class Experiment:
             print(f"Loading checkpoint: {os.path.basename(checkpoint)}")
             self.model.build(input_shape=(None, 224, 224, 3))
 
-            f1 = F1Score(average="macro", threshold=0.5)
+            f1 = F1Score(average=None, threshold=0.5)
             precision_metric = tf.keras.metrics.Precision(name="precision")  # , class_id = 4)
             self.model.compile(
                 optimizer="adam",

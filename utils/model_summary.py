@@ -1,6 +1,7 @@
 from masters.models.armnet import *
 from masters.models.rmflayers import *
 
+from tensorflow.keras.applications import ResNet50
 from tensorflow.keras.layers import (
     Input,
     Conv2D,
@@ -153,32 +154,47 @@ def test_model(layer, input_shape, expand_nested=False):
 
 
 if __name__ == "__main__":
-    ref_model = load_model()
-    # ref_model.build((None, 224, 224, 3))
-    ref_model.summary()
+    # ref_model = load_model()
+    # # ref_model.build((None, 224, 224, 3))
+    # ref_model.summary()
 
-    # Total params: 1,133,685 (4.32 MB)
-    # Trainable params: 1,129,141 (4.31 MB)
-    # Non-trainable params: 4,544 (17.75 KB)
-    print()
+    # # Total params: 1,133,685 (4.32 MB)
+    # # Trainable params: 1,129,141 (4.31 MB)
+    # # Non-trainable params: 4,544 (17.75 KB)
+    # print()
 
-    print("****", colored("GlobalAttentionBlock", "blue"), colored("OK", "green"))
-    test_model(GlobalAttentionBlock(), (None, 14, 14, 256))
-    print()
-
-
-    print("****", colored("SelfAttention", "blue"), colored("OK", "green"))
-    test_model(SelfAttention(), (None, 14, 14, 256))
-    print()
+    # print("****", colored("GlobalAttentionBlock", "blue"), colored("OK", "green"))
+    # test_model(GlobalAttentionBlock(), (None, 14, 14, 256))
+    # print()
 
 
-    print("****", colored("ChannelAttention", "blue"), colored("OK", "red"))
-    test_model(ChannelAttention(), (None, 14, 14, 256), True)
-    print()
+    # print("****", colored("SelfAttention", "blue"), colored("OK", "green"))
+    # test_model(SelfAttention(), (None, 14, 14, 256))
+    # print()
+
+
+    # print("****", colored("ChannelAttention", "blue"), colored("OK", "red"))
+    # test_model(ChannelAttention(), (None, 14, 14, 256), True)
+    # print()
 
     print("------------------------------------")
     print("------------------------------------")
     print("------------------------------------")
     model = RMFNet()
+    model.build((None, 224, 224, 3))
+    model.summary(expand_nested=True)
+
+    print("------------------------------------")
+    print("------------------------------------")
+    print("------------------------------------")
+    model = ResNet50(
+        include_top=True,
+        weights=None,
+        input_tensor=None,
+        input_shape=None,
+        pooling=None,
+        classes=4,
+        classifier_activation="softmax",
+    )
     model.build((None, 224, 224, 3))
     model.summary(expand_nested=True)

@@ -57,7 +57,13 @@ if __name__ == "__main__":
                 # The reason behind this being a list, is that we could evaluate with different weights.(e.g. best val, last, etc)
                 if "evaluate_results" not in data['folds_results'][fold_result_current_index]:
                     data['folds_results'][fold_result_current_index]["evaluate_results"] = []
-                data['folds_results'][fold_result_current_index]["evaluate_results"].append({"convergence_epoch": convergence_epoch, "weight_path": best_val_path, "loss": result["loss"], "compile_metric": result["compile_metrics"]})
+                
+                metrics_dict = {"convergence_epoch": convergence_epoch, "weight_path": best_val_path, "loss": result["loss"]}
+                for class_id, class_value in enumerate(result["compile_metrics"].numpy()):
+                    print(class_id, class_value)
+                    metrics_dict = metrics_dict | {f"f1_class_{class_id}": float(class_value)}
+                    
+                data['folds_results'][fold_result_current_index]["evaluate_results"].append(metrics_dict)
             else: 
                 print(colored("Fold result not found", 'red'))
 
